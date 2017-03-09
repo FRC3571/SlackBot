@@ -14,7 +14,9 @@
   "author": "Tomas Rakusan",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "~7.0.5",
-    "slack": "~8.2.1"
+    "@types/moment-timezone": "~0.2.34",
+    "@types/node": "^7.0.5",
+    "moment-timezone": "~0.5.11",
+    "slack": "^8.2.1"
   }
 }
