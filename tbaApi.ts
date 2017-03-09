@@ -73,14 +73,14 @@ function TBAGet<T>(path: string) {
 }
 type StrNumDic = { [key: string]: number }
 
-interface TBAStatus {
+export interface TBAStatus {
     current_season: number
     down_events: string[]
     is_datafeed_down: boolean
     max_season: number
 }
 
-interface Team {
+export interface Team {
     website: string
     name: string
     locality: string
@@ -93,7 +93,7 @@ interface Team {
     rookie_year: number
     motto: string
 }
-interface FRCEvent {
+export interface FRCEvent {
     key: string
     name: string
     short_name: string
@@ -125,7 +125,7 @@ interface FRCEvent {
     start_date: string
     end_date: string
 }
-interface DistrictPoints {
+export interface DistrictPoints {
     points: {
         [key: string]: {
             alliance_points: number
@@ -142,7 +142,7 @@ interface DistrictPoints {
         }
     }
 }
-interface DistrictRank {
+export interface DistrictRank {
     points_total: number
     team_key: string
     event_points: {
@@ -158,7 +158,7 @@ interface DistrictRank {
     rank: number
     rookie_bonus: number
 }
-interface Match {
+export interface Match {
     key: string
     comp_level: string
     set_number: number
@@ -187,7 +187,7 @@ interface Match {
     time_string: string
     time: number
 }
-interface Award {
+export interface Award {
     name: string
     award_type: number
     event_key: string
@@ -197,7 +197,7 @@ interface Award {
     }[]
     year: number
 }
-interface Media {
+export interface Media {
     type: string
     foreign_key: string
     details: {
@@ -205,7 +205,7 @@ interface Media {
     }
     preferred: boolean
 }
-interface Robot {
+export interface Robot {
     key: string
     team_key: string
     year: number

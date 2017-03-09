@@ -2,7 +2,8 @@ import * as fs from 'fs'
 import * as slack from 'slack'
 import * as https from 'https'
 let keyFS = fsPromise('key.txt')
-import { TBAReq as tba } from './tbaApi'
+import { TBAReq as tba, Match } from './tbaApi'
+import * as timezone from "moment-timezone"
 
 let year = 2017
 
@@ -35,11 +36,20 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
     })
 }).catch(e => console.log(e))
 
+let teamMatch: { [key: string]: Match[] } = {}
 let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a: { text: string, attachments?: slack.Attachment[] }) => any) => any } = {
     "!info": (mesg, par, res) => {
         let num = /\d{1,4}/.exec(par[1])
         if (num !== null) {
-            Promise.all([tba.TeamReq('frc' + num[0]), tba.TeamEvents('frc' + num[0], year)]).then(([team, events]) => {
+            let TeamId = 'frc' + num[0]
+            Promise.all([tba.TeamReq(TeamId), tba.TeamEvents(TeamId, year)]).then(([team, events]) => {
+                for (let i = 0; i < events.length; i++) {
+                    if (+timezone.tz(events[i].start_date + " 08:00", events[0].timezone) < Date.now()) {
+                        tba.TeamEventMatch(TeamId, events[0].key).then(e => {
+                            teamMatch[num[0]] = e
+                        })
+                    }
+                }
                 res({
                     text: `Info for Team ` + num[0],
                     attachments: [
