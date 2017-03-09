@@ -24,7 +24,7 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
             let com = c[0].toLowerCase()
             if (com in commands) {
                 commands[com](a, c, res => {
-                    let post: slack.post = { token: key, channel: a.channel, text: res.text }
+                    let post: slack.post = { token: key, channel: a.channel, text: res.text, username: 'frc_match' }
                     if (res.attachments) post.attachments = res.attachments
                     slack.chat.postMessage(post, (err, data) => {
                         console.log({ err, data })
@@ -76,7 +76,50 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
 
     },
     "!track": (mesg, par, res) => {
+        let team = /\d{1,4}/.exec(par[1])
+        if (team == null) {
+            res({ text: "Sorry this is an invalid team number" })
+            return
+        }
+        tba.TeamEvents('frc' + team[0], year).then(events => {
+            let s = ""
+            for (let i = 0; i < events.length; i++) {
+                for (let ii = 0; ii < events[i].matches.length; ii++) {
+                    let match = events[i].matches[ii]
+                    if (match.alliances.blue.teams.indexOf(team[0]) >= 0) {
+                        s += `${match.score_breakdown.blue} match ${match.match_number}`
+                    } else if (match.alliances.red.teams.indexOf(team[0]) >= 0) {
 
+                    }
+                }
+            }
+        }).catch(err => {
+            if ('404' in err) {
+                res({ text: `Sorry team ${par[1]} does not exist ${parseInt(par[1]) > 7000 ? 'yet' : ''}` })
+            }
+            console.log({ err })
+        })
+    },
+    "!help":(mesg,par,res)=>{
+        res({text:`Info`,attachments:[
+            {
+                fields:[
+                    {
+                        title:'!info',
+                        value:`Param: <Team number>
+                        Get info on a Team`
+                    },
+                    {
+                        title:'!status',
+                        value:'Get tracking status of the bot'
+                    },
+                    {
+                        title:'!track',
+                        value:`Param: <Tem Number>`
+                    }
+                ]
+            }
+        ]})
     }
 }
 
