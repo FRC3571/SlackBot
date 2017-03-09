@@ -3,9 +3,9 @@ import * as slack from 'slack'
 import * as https from 'https'
 let keyFS = fsPromise('key.txt')
 import { TBAReq as tba, Match } from './tbaApi'
-import * as timezone from "moment-timezone"
+import * as tz from "moment-timezone"
 
-let year = 2017
+let curYear = 2017
 
 Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
     if (status.is_datafeed_down) {
@@ -13,7 +13,7 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
         console.log(status)
         return
     }
-    year = status.current_season
+    curYear = status.current_season
     let bot = slack.rtm.client()
     bot.listen({ token: key })
     bot.hello(msg => console.log(msg))
@@ -36,22 +36,76 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
     })
 }).catch(e => console.log(e))
 
+type resType = { text: string, attachments?: slack.Attachment[] }
+
 let teamMatch: { [key: string]: Match[] } = {}
-let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a: { text: string, attachments?: slack.Attachment[] }) => any) => any } = {
+let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a: resType) => any) => any } = {
     "!info": (mesg, par, res) => {
-        let num = /\d{1,4}/.exec(par[1])
-        if (num !== null) {
-            let TeamId = 'frc' + num[0]
+        let year = parseInt(par[2], 10) || curYear
+        let teamNum = /\d{1,4}/.exec(par[1])
+        if (teamNum !== null) {
+            let TeamId = 'frc' + teamNum[0]
             Promise.all([tba.TeamReq(TeamId), tba.TeamEvents(TeamId, year)]).then(([team, events]) => {
+                let dateNow = Date.now()
+                let num = 0, resp: slack.Attachment[] = []
                 for (let i = 0; i < events.length; i++) {
-                    if (+timezone.tz(events[i].start_date + " 08:00", events[0].timezone) < Date.now()) {
-                        tba.TeamEventMatch(TeamId, events[0].key).then(e => {
-                            teamMatch[num[0]] = e
-                        })
+                    let name = events[i].short_name
+                    if (+tz.tz(events[i].start_date + " 08:00", events[i].timezone) < Date.now()) {
+                        num++
+                        Promise.all([tba.EventRankings(events[i].key), tba.EventStats(events[i].key)]).then(([ranks, stats]) => {
+                            if (ranks[0] === undefined) {
+                                num--;
+                                if (num === 0) {
+                                    res({ text: "", attachments: resp })
+                                }
+                                return
+                            }
+                            let tNum = parseInt(teamNum[0], 10)
+                            let pointsI = ranks[0].indexOf("Record (W-L-T)"),
+                                rankI = ranks[0].indexOf("Rank"),
+                                teamI = ranks[0].indexOf("Team"),
+                                teamRank = ranks.find(e => e[teamI] == tNum),
+                                dpr = stats.dprs[teamNum[0]],
+                                opr = stats.oprs[teamNum[0]],
+                                ccwm = stats.ccwms[teamNum[0]]
+                            let fields: { title?: string, value?: string }[] = []
+                            if (teamRank[pointsI] !== undefined) {
+                                fields.push({
+                                    title: 'Record (W-L-T)',
+                                    value: teamRank[pointsI].toString()
+                                })
+                            }
+                            if (teamRank[rankI] !== undefined) {
+                                fields.push({
+                                    title: 'Rank',
+                                    value: teamRank[rankI].toString()
+                                })
+                            }
+                            fields.push({
+                                title: 'Defense Power Rating',
+                                value: dpr.toPrecision(5)
+                            },
+                                {
+                                    title: 'Offensive Power Rating',
+                                    value: opr.toPrecision(5)
+                                },
+                                {
+                                    title: 'Calculated Contribution to Winning',
+                                    value: ccwm.toPrecision(5)
+                                })
+                            resp.push({
+                                title: name,
+                                fields
+                            })
+                            num--
+                            if (num === 0) {
+                                res({ text: "", attachments: resp })
+                            }
+                        }).catch(console.log)
                     }
                 }
                 res({
-                    text: `Info for Team ` + num[0],
+                    text: `Info for Team ` + teamNum[0],
                     attachments: [
                         {
                             title: "Info",
@@ -91,7 +145,7 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
             res({ text: "Sorry this is an invalid team number" })
             return
         }
-        tba.TeamEvents('frc' + team[0], year).then(events => {
+        tba.TeamEvents('frc' + team[0], curYear).then(events => {
             let s = ""
             for (let i = 0; i < events.length; i++) {
                 for (let ii = 0; ii < events[i].matches.length; ii++) {
@@ -110,26 +164,27 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
             console.log({ err })
         })
     },
-    "!help":(mesg,par,res)=>{
-        res({text:`Info`,attachments:[
-            {
-                fields:[
-                    {
-                        title:'!info',
-                        value:`Param: <Team number>
-                        Get info on a Team`
-                    },
-                    {
-                        title:'!status',
-                        value:'Get tracking status of the bot'
-                    },
-                    {
-                        title:'!track',
-                        value:`Param: <Tem Number>`
-                    }
-                ]
-            }
-        ]})
+    "!help": (mesg, par, res) => {
+        res({
+            text: `Info`, attachments: [
+                {
+                    fields: [
+                        {
+                            title: '!info <Team number> ?<year>',
+                            value: `Get info on a Team\nIf year is not provided than current year will be assumed`
+                        },
+                        {
+                            title: '!status',
+                            value: 'Get tracking status of the bot'
+                        },
+                        {
+                            title: '!track <Tem Number>',
+                            value: `Track a team`
+                        }
+                    ]
+                }
+            ]
+        })
     }
 }
 
