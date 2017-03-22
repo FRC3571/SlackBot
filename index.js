@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const slack = require("slack");
-let keyFS = fsPromise('key.txt');
 const tbaApi_1 = require("./tbaApi");
 const tz = require("moment-timezone");
+let keyFS = fsPromise('key.txt');
 let curYear = 2017;
 Promise.all([tbaApi_1.TBAReq.Status(), keyFS]).then(([status, key]) => {
     if (status.is_datafeed_down) {
@@ -21,7 +21,7 @@ Promise.all([tbaApi_1.TBAReq.Status(), keyFS]).then(([status, key]) => {
             return;
         console.log({ a });
         if (a.text[0] === '!') {
-            let c = a.text.split(' ');
+            let c = a.text.replace(/`|_|~|\*/g, '').split(/s+/);
             let com = c[0].toLowerCase();
             if (com in commands) {
                 commands[com](a, c, res => {
@@ -33,6 +33,11 @@ Promise.all([tbaApi_1.TBAReq.Status(), keyFS]).then(([status, key]) => {
                     });
                 });
             }
+            else {
+                slack.chat.postMessage({ token: key, channel: a.channel, text: `Command \`${com.substr(1)}\` not found`, username: 'frc_match' }, (err, data) => {
+                    console.log({ err, data });
+                });
+            }
         }
     });
 }).catch(e => console.log(e));
@@ -41,6 +46,7 @@ let commands = {
     "!info": (mesg, par, res) => {
         let year = parseInt(par[2], 10) || curYear;
         let teamNum = /\d{1,4}/.exec(par[1]);
+        console.log({ year, teamNum });
         if (teamNum !== null) {
             let TeamId = 'frc' + teamNum[0];
             Promise.all([tbaApi_1.TBAReq.TeamReq(TeamId), tbaApi_1.TBAReq.TeamEvents(TeamId, year)]).then(([team, events]) => {
@@ -60,27 +66,18 @@ let commands = {
                             }
                             let tNum = parseInt(teamNum[0], 10);
                             let pointsI = ranks[0].indexOf("Record (W-L-T)"), rankI = ranks[0].indexOf("Rank"), teamI = ranks[0].indexOf("Team"), teamRank = ranks.find(e => e[teamI] == tNum), dpr = stats.dprs[teamNum[0]], opr = stats.oprs[teamNum[0]], ccwm = stats.ccwms[teamNum[0]];
-                            let fields = [];
+                            let fields = [{ title: 'Rank', value: teamRank[rankI].toString() }];
                             if (teamRank[pointsI] !== undefined) {
                                 fields.push({
                                     title: 'Record (W-L-T)',
                                     value: teamRank[pointsI].toString()
                                 });
                             }
-                            if (teamRank[rankI] !== undefined) {
-                                fields.push({
-                                    title: 'Rank',
-                                    value: teamRank[rankI].toString()
-                                });
-                            }
                             fields.push({
-                                title: 'Defense Power Rating',
-                                value: dpr.toPrecision(5)
+                                title: 'Defense : Offensive Power Rating',
+                                value: `${dpr.toPrecision(5)} : ${opr.toPrecision(5)}`
                             }, {
-                                title: 'Offensive Power Rating',
-                                value: opr.toPrecision(5)
-                            }, {
-                                title: 'Calculated Contribution to Winning',
+                                title: 'Calculated Contribution to Win',
                                 value: ccwm.toPrecision(5)
                             });
                             resp.push({
@@ -110,7 +107,7 @@ let commands = {
                                 },
                                 {
                                     title: "Current Competitions",
-                                    value: events.map(a => a.start_date + ' -> ' + a.short_name + ' in ' + a.location).sort().join('\n') || "This team is not participating in any events this year"
+                                    value: events.map(a => a.start_date + ' -> ' + a.short_name + ' in ' + a.location).sort().join('\n') || `This team ${year < curYear ? "has not participated" : "is not participating"} in any events during this year`
                                 }
                             ]
                         }
@@ -124,7 +121,7 @@ let commands = {
             });
         }
         else {
-            res({ text: 'Sorry That is an invalid team number' });
+            res({ text: par.length === 1 ? 'This command needs to be called with a team number' : 'Sorry That is an invalid team number' });
         }
     },
     "!status": (mesg, par, res) => {
@@ -183,7 +180,7 @@ function fsPromise(src) {
             if (err)
                 rej(err);
             else
-                res(data);
+                res(data.trim());
         });
     });
 }

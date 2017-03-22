@@ -1,10 +1,10 @@
 import * as fs from 'fs'
 import * as slack from 'slack'
 import * as https from 'https'
-let keyFS = fsPromise('key.txt')
 import { TBAReq as tba, Match } from './tbaApi'
 import * as tz from "moment-timezone"
 
+let keyFS = fsPromise('key.txt')
 let curYear = 2017
 
 Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
@@ -21,7 +21,7 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
         if ('subtype' in a) return
         console.log({ a })
         if (a.text[0] === '!') {
-            let c = a.text.split(' ')
+            let c = a.text.replace(/`|_|~|\*/g,'').split(/s+/)
             let com = c[0].toLowerCase()
             if (com in commands) {
                 commands[com](a, c, res => {
@@ -30,6 +30,10 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
                     slack.chat.postMessage(post, (err, data) => {
                         console.log({ err, data })
                     })
+                })
+            } else {
+                slack.chat.postMessage({ token: key, channel: a.channel, text: `Command \`${com.substr(1)}\` not found`, username: 'frc_match' }, (err, data) => {
+                    console.log({ err, data })
                 })
             }
         }
@@ -43,6 +47,7 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
     "!info": (mesg, par, res) => {
         let year = parseInt(par[2], 10) || curYear
         let teamNum = /\d{1,4}/.exec(par[1])
+        console.log({ year, teamNum })
         if (teamNum !== null) {
             let TeamId = 'frc' + teamNum[0]
             Promise.all([tba.TeamReq(TeamId), tba.TeamEvents(TeamId, year)]).then(([team, events]) => {
@@ -68,29 +73,19 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
                                 dpr = stats.dprs[teamNum[0]],
                                 opr = stats.oprs[teamNum[0]],
                                 ccwm = stats.ccwms[teamNum[0]]
-                            let fields: { title?: string, value?: string }[] = []
+                            let fields: { title?: string, value?: string }[] = [{ title: 'Rank', value: teamRank[rankI].toString() }]
                             if (teamRank[pointsI] !== undefined) {
                                 fields.push({
                                     title: 'Record (W-L-T)',
                                     value: teamRank[pointsI].toString()
                                 })
                             }
-                            if (teamRank[rankI] !== undefined) {
-                                fields.push({
-                                    title: 'Rank',
-                                    value: teamRank[rankI].toString()
-                                })
-                            }
                             fields.push({
-                                title: 'Defense Power Rating',
-                                value: dpr.toPrecision(5)
+                                title: 'Defense : Offensive Power Rating',
+                                value: `${dpr.toPrecision(5)} : ${opr.toPrecision(5)}`
                             },
                                 {
-                                    title: 'Offensive Power Rating',
-                                    value: opr.toPrecision(5)
-                                },
-                                {
-                                    title: 'Calculated Contribution to Winning',
+                                    title: 'Calculated Contribution to Win',
                                     value: ccwm.toPrecision(5)
                                 })
                             resp.push({
@@ -120,7 +115,7 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
                                 },
                                 {
                                     title: "Current Competitions",
-                                    value: events.map(a => a.start_date + ' -> ' + a.short_name + ' in ' + a.location).sort().join('\n') || "This team is not participating in any events this year"
+                                    value: events.map(a => a.start_date + ' -> ' + a.short_name + ' in ' + a.location).sort().join('\n') || `This team ${year < curYear ? "has not participated" : "is not participating"} in any events during this year`
                                 }
                             ]
                         }
@@ -133,7 +128,7 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
                 console.log({ err })
             })
         } else {
-            res({ text: 'Sorry That is an invalid team number' })
+            res({ text: par.length === 1 ? 'This command needs to be called with a team number' : 'Sorry That is an invalid team number' })
         }
     },
     "!status": (mesg, par, res) => {
@@ -192,7 +187,7 @@ function fsPromise(src: string) {
     return new Promise<string>((res, rej) => {
         fs.readFile(src, 'utf8', (err, data) => {
             if (err) rej(err)
-            else res(data)
+            else res(data.trim())
         })
     })
 }

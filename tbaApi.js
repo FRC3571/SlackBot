@@ -39,7 +39,7 @@ function TBAGet(path) {
     return new Promise((resolve, reject) => {
         if (maxAge != null && maxAge > +new Date()) {
             resolve(tempCache);
-            console.log('resolved early');
+            console.log(path + ' from cache due to age');
             return;
         }
         let opt = { protocol: 'https:', hostname: 'www.thebluealliance.com', path: '/api/v2/' + path, headers: { "X-TBA-App-Id": 'frc3571:Slack-Bot:v1' } };
@@ -56,8 +56,10 @@ function TBAGet(path) {
                 let cacheControl = /max-age=(\d+)/.exec(res.headers['cache-control']);
                 if (cacheControl !== null && cacheControl[1])
                     maxAge = 1000 * parseInt(cacheControl[1], 10) + +new Date();
-                if (res.statusCode === 304)
+                if (res.statusCode === 304) {
                     resolve(tempCache);
+                    console.log(path + ' from cache due to 304');
+                }
                 else if (res.statusCode === 404)
                     reject(JSON.parse(raw));
                 else {
