@@ -21,7 +21,7 @@ Promise.all([tba.Status(), keyFS]).then(([status, key]) => {
         if ('subtype' in a) return
         console.log({ a })
         if (a.text[0] === '!') {
-            let c = a.text.replace(/`|_|~|\*/g,'').split(/s+/)
+            let c = a.text.replace(/`|_|~|\*/g, '').split(/\s+/)
             let com = c[0].toLowerCase()
             if (com in commands) {
                 commands[com](a, c, res => {
@@ -65,8 +65,8 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
                                 }
                                 return
                             }
-                            let tNum = parseInt(teamNum[0], 10)
-                            let pointsI = ranks[0].indexOf("Record (W-L-T)"),
+                            let tNum = parseInt(teamNum[0], 10),
+                                pointsI = ranks[0].indexOf("Record (W-L-T)"),
                                 rankI = ranks[0].indexOf("Rank"),
                                 teamI = ranks[0].indexOf("Team"),
                                 teamRank = ranks.find(e => e[teamI] == tNum),

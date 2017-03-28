@@ -21,7 +21,7 @@ Promise.all([tbaApi_1.TBAReq.Status(), keyFS]).then(([status, key]) => {
             return;
         console.log({ a });
         if (a.text[0] === '!') {
-            let c = a.text.replace(/`|_|~|\*/g, '').split(/s+/);
+            let c = a.text.replace(/`|_|~|\*/g, '').split(/\s+/);
             let com = c[0].toLowerCase();
             if (com in commands) {
                 commands[com](a, c, res => {
