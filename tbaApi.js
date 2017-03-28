@@ -3,33 +3,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const https = require("https");
 let cache = {};
 exports.TBAReq = {
-    TeamList: (page_num) => TBAGet('teams/' + page_num),
-    TeamReq: (team_key) => TBAGet('team/' + team_key),
-    TeamEvents: (team_key, year) => TBAGet(`team/${team_key}/${year}/events`),
-    TeamEventAward: (team_key, event_key) => TBAGet(`team/${team_key}/event/${event_key}/awards`),
-    TeamEventMatch: (team_key, event_key) => TBAGet(`team/${team_key}/event/${event_key}/matches`),
-    TeamYearsParticipated: (team_key) => TBAGet(`team/${team_key}/years_participated`),
-    TeamMedia: (team_key, year) => TBAGet(`team/${team_key}/${year}/media`),
-    TeamHistoryEvents: (team_key) => TBAGet(`team/${team_key}/history/events`),
-    TeamHistoryAwards: (team_key) => TBAGet(`team/${team_key}/history/awards`),
-    TeamHistoryRobots: (team_key) => TBAGet(`team/${team_key}/history/robots`),
-    TeamHistoryDistricts: (team_key) => TBAGet(`team/${team_key}/history/districts`),
-    EventList: (year) => TBAGet(`events/${year}`),
-    EventReq: (event_key) => TBAGet(`event/${event_key}`),
-    EventTeams: (event_key) => TBAGet(`event/${event_key}/teams`),
-    EventMatches: (event_key) => TBAGet(`event/${event_key}/matches`),
-    EventStats: (event_key) => TBAGet(`event/${event_key}/stats`),
-    EventRankings: (event_key) => TBAGet(`event/${event_key}/rankings`),
-    EventAwards: (event_key) => TBAGet(`event/${event_key}/awards`),
-    EventDistrictPoints: (event_key) => TBAGet(`event/${event_key}/awards`),
-    SingleMatch: (match_key) => TBAGet(`match/${match_key}`),
-    DistrictList: (year) => TBAGet(`districts/${year}`),
-    DistrictEvents: (district_short, year) => TBAGet(`district/${district_short}/${year}/events`),
-    DistrictRankings: (district_short, year) => TBAGet(`district/${district_short}/${year}/rankings`),
-    DistrictTeams: (district_short, year) => TBAGet(`district/${district_short}/${year}/teams`),
-    Status: () => TBAGet('status')
+    TeamList: (page_num, onOutdated) => TBAGet('teams/' + page_num, onOutdated),
+    TeamReq: (team_key, onOutdated) => TBAGet('team/' + team_key, onOutdated),
+    TeamEvents: (team_key, year, onOutdated) => TBAGet(`team/${team_key}/${year}/events`, onOutdated),
+    TeamEventAward: (team_key, event_key, onOutdated) => TBAGet(`team/${team_key}/event/${event_key}/awards`, onOutdated),
+    TeamEventMatch: (team_key, event_key, onOutdated) => TBAGet(`team/${team_key}/event/${event_key}/matches`, onOutdated),
+    TeamYearsParticipated: (team_key, onOutdated) => TBAGet(`team/${team_key}/years_participated`, onOutdated),
+    TeamMedia: (team_key, year, onOutdated) => TBAGet(`team/${team_key}/${year}/media`, onOutdated),
+    TeamHistoryEvents: (team_key, onOutdated) => TBAGet(`team/${team_key}/history/events`, onOutdated),
+    TeamHistoryAwards: (team_key, onOutdated) => TBAGet(`team/${team_key}/history/awards`, onOutdated),
+    TeamHistoryRobots: (team_key, onOutdated) => TBAGet(`team/${team_key}/history/robots`, onOutdated),
+    TeamHistoryDistricts: (team_key, onOutdated) => TBAGet(`team/${team_key}/history/districts`, onOutdated),
+    EventList: (year, onOutdated) => TBAGet(`events/${year}`, onOutdated),
+    EventReq: (event_key, onOutdated) => TBAGet(`event/${event_key}`, onOutdated),
+    EventTeams: (event_key, onOutdated) => TBAGet(`event/${event_key}/teams`, onOutdated),
+    EventMatches: (event_key, onOutdated) => TBAGet(`event/${event_key}/matches`, onOutdated),
+    EventStats: (event_key, onOutdated) => TBAGet(`event/${event_key}/stats`, onOutdated),
+    EventRankings: (event_key, onOutdated) => TBAGet(`event/${event_key}/rankings`, onOutdated),
+    EventAwards: (event_key, onOutdated) => TBAGet(`event/${event_key}/awards`, onOutdated),
+    EventDistrictPoints: (event_key, onOutdated) => TBAGet(`event/${event_key}/awards`, onOutdated),
+    SingleMatch: (match_key, onOutdated) => TBAGet(`match/${match_key}`, onOutdated),
+    DistrictList: (year, onOutdated) => TBAGet(`districts/${year}`, onOutdated),
+    DistrictEvents: (district_short, year, onOutdated) => TBAGet(`district/${district_short}/${year}/events`, onOutdated),
+    DistrictRankings: (district_short, year, onOutdated) => TBAGet(`district/${district_short}/${year}/rankings`, onOutdated),
+    DistrictTeams: (district_short, year, onOutdated) => TBAGet(`district/${district_short}/${year}/teams`, onOutdated),
+    Status: (onOutdated) => TBAGet('status', onOutdated)
 };
-function TBAGet(path) {
+function TBAGet(path, onOutdated) {
     let modified, tempCache, maxAge;
     if (path in cache) {
         modified = cache[path].modified;
@@ -39,6 +39,8 @@ function TBAGet(path) {
     return new Promise((resolve, reject) => {
         if (maxAge != null && maxAge > +new Date()) {
             resolve(tempCache);
+            if (onOutdated)
+                setTimeout(onOutdated, maxAge - +new Date(), () => TBAGet(path, onOutdated)).unref();
             console.log(path + ' from cache due to age');
             return;
         }
@@ -56,6 +58,8 @@ function TBAGet(path) {
                 let cacheControl = /max-age=(\d+)/.exec(res.headers['cache-control']);
                 if (cacheControl !== null && cacheControl[1])
                     maxAge = 1000 * parseInt(cacheControl[1], 10) + +new Date();
+                if (onOutdated)
+                    setTimeout(onOutdated, maxAge - +new Date(), () => TBAGet(path, onOutdated)).unref();
                 if (res.statusCode === 304) {
                     resolve(tempCache);
                     console.log(path + ' from cache due to 304');

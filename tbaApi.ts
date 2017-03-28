@@ -1,34 +1,35 @@
 import * as https from 'https'
+type onOutdated<T> = (callback: () => Promise<T>) => any
 let cache: { [key: string]: { modified: string, val: any, max_age: number } } = {}
 export let TBAReq = {
-    TeamList: (page_num: number) => TBAGet<Team[]>('teams/' + page_num),
-    TeamReq: (team_key: string) => TBAGet<Team>('team/' + team_key),
-    TeamEvents: (team_key: string, year: number) => TBAGet<FRCEvent[]>(`team/${team_key}/${year}/events`),
-    TeamEventAward: (team_key: string, event_key: string) => TBAGet<Award[]>(`team/${team_key}/event/${event_key}/awards`),
-    TeamEventMatch: (team_key: string, event_key: string) => TBAGet<Match[]>(`team/${team_key}/event/${event_key}/matches`),
-    TeamYearsParticipated: (team_key: string) => TBAGet<number[]>(`team/${team_key}/years_participated`),
-    TeamMedia: (team_key: string, year: number) => TBAGet<Media[]>(`team/${team_key}/${year}/media`),
-    TeamHistoryEvents: (team_key: string) => TBAGet<FRCEvent[]>(`team/${team_key}/history/events`),
-    TeamHistoryAwards: (team_key: string) => TBAGet<Award[]>(`team/${team_key}/history/awards`),
-    TeamHistoryRobots: (team_key: string) => TBAGet<Robot[]>(`team/${team_key}/history/robots`),
-    TeamHistoryDistricts: (team_key: string) => TBAGet<{ [key: string]: string }>(`team/${team_key}/history/districts`),
-    EventList: (year: number) => TBAGet<FRCEvent[]>(`events/${year}`),
-    EventReq: (event_key: string) => TBAGet<FRCEvent>(`event/${event_key}`),
-    EventTeams: (event_key: string) => TBAGet<Team[]>(`event/${event_key}/teams`),
-    EventMatches: (event_key: string) => TBAGet<Match[]>(`event/${event_key}/matches`),
-    EventStats: (event_key: string) => TBAGet<{ oprs: StrNumDic, ccwms: StrNumDic, dprs: StrNumDic }>(`event/${event_key}/stats`),
-    EventRankings: (event_key: string) => TBAGet<(string | number)[][]>(`event/${event_key}/rankings`),
-    EventAwards: (event_key: string) => TBAGet<Award[]>(`event/${event_key}/awards`),
-    EventDistrictPoints: (event_key: string) => TBAGet<DistrictPoints>(`event/${event_key}/awards`),
-    SingleMatch: (match_key: string) => TBAGet<Match>(`match/${match_key}`),
-    DistrictList: (year: number) => TBAGet<{ name: string, key: string }[]>(`districts/${year}`),
-    DistrictEvents: (district_short: string, year) => TBAGet<FRCEvent[]>(`district/${district_short}/${year}/events`),
-    DistrictRankings: (district_short: string, year) => TBAGet<DistrictRank[]>(`district/${district_short}/${year}/rankings`),
-    DistrictTeams: (district_short: string, year) => TBAGet<Team[]>(`district/${district_short}/${year}/teams`),
-    Status: () => TBAGet<TBAStatus>('status')
+    TeamList: (page_num: number, onOutdated?: onOutdated<Team[]>) => TBAGet<Team[]>('teams/' + page_num, onOutdated),
+    TeamReq: (team_key: string, onOutdated?: onOutdated<Team>) => TBAGet<Team>('team/' + team_key, onOutdated),
+    TeamEvents: (team_key: string, year: number, onOutdated?: onOutdated<FRCEvent[]>) => TBAGet<FRCEvent[]>(`team/${team_key}/${year}/events`, onOutdated),
+    TeamEventAward: (team_key: string, event_key: string, onOutdated?: onOutdated<Award[]>) => TBAGet<Award[]>(`team/${team_key}/event/${event_key}/awards`, onOutdated),
+    TeamEventMatch: (team_key: string, event_key: string, onOutdated?: onOutdated<Match[]>) => TBAGet<Match[]>(`team/${team_key}/event/${event_key}/matches`, onOutdated),
+    TeamYearsParticipated: (team_key: string, onOutdated?: onOutdated<number[]>) => TBAGet<number[]>(`team/${team_key}/years_participated`, onOutdated),
+    TeamMedia: (team_key: string, year: number, onOutdated?: onOutdated<Media[]>) => TBAGet<Media[]>(`team/${team_key}/${year}/media`, onOutdated),
+    TeamHistoryEvents: (team_key: string, onOutdated?: onOutdated<FRCEvent[]>) => TBAGet<FRCEvent[]>(`team/${team_key}/history/events`, onOutdated),
+    TeamHistoryAwards: (team_key: string, onOutdated?: onOutdated<Award[]>) => TBAGet<Award[]>(`team/${team_key}/history/awards`, onOutdated),
+    TeamHistoryRobots: (team_key: string, onOutdated?: onOutdated<Robot[]>) => TBAGet<Robot[]>(`team/${team_key}/history/robots`, onOutdated),
+    TeamHistoryDistricts: (team_key: string, onOutdated?: onOutdated<StrDict>) => TBAGet<StrDict>(`team/${team_key}/history/districts`, onOutdated),
+    EventList: (year: number, onOutdated?: onOutdated<FRCEvent[]>) => TBAGet<FRCEvent[]>(`events/${year}`, onOutdated),
+    EventReq: (event_key: string, onOutdated?: onOutdated<FRCEvent>) => TBAGet<FRCEvent>(`event/${event_key}`, onOutdated),
+    EventTeams: (event_key: string, onOutdated?: onOutdated<Team[]>) => TBAGet<Team[]>(`event/${event_key}/teams`, onOutdated),
+    EventMatches: (event_key: string, onOutdated?: onOutdated<Match[]>) => TBAGet<Match[]>(`event/${event_key}/matches`, onOutdated),
+    EventStats: (event_key: string, onOutdated?: onOutdated<Stats>) => TBAGet<Stats>(`event/${event_key}/stats`, onOutdated),
+    EventRankings: (event_key: string, onOutdated?: onOutdated<(string | number)[][]>) => TBAGet<(string | number)[][]>(`event/${event_key}/rankings`, onOutdated),
+    EventAwards: (event_key: string, onOutdated?: onOutdated<Award[]>) => TBAGet<Award[]>(`event/${event_key}/awards`, onOutdated),
+    EventDistrictPoints: (event_key: string, onOutdated?: onOutdated<DistrictPoints>) => TBAGet<DistrictPoints>(`event/${event_key}/awards`, onOutdated),
+    SingleMatch: (match_key: string, onOutdated?: onOutdated<Match>) => TBAGet<Match>(`match/${match_key}`, onOutdated),
+    DistrictList: (year: number, onOutdated?: onOutdated<{ name: string, key: string }[]>) => TBAGet<{ name: string, key: string }[]>(`districts/${year}`, onOutdated),
+    DistrictEvents: (district_short: string, year, onOutdated?: onOutdated<FRCEvent[]>) => TBAGet<FRCEvent[]>(`district/${district_short}/${year}/events`, onOutdated),
+    DistrictRankings: (district_short: string, year, onOutdated?: onOutdated<DistrictRank[]>) => TBAGet<DistrictRank[]>(`district/${district_short}/${year}/rankings`, onOutdated),
+    DistrictTeams: (district_short: string, year, onOutdated?: onOutdated<Team[]>) => TBAGet<Team[]>(`district/${district_short}/${year}/teams`, onOutdated),
+    Status: (onOutdated?: onOutdated<TBAStatus>) => TBAGet<TBAStatus>('status', onOutdated)
 }
 
-function TBAGet<T>(path: string) {
+function TBAGet<T>(path: string, onOutdated?: onOutdated<T>) {
     let modified, tempCache: T, maxAge: number
     if (path in cache) {
         modified = cache[path].modified
@@ -38,6 +39,7 @@ function TBAGet<T>(path: string) {
     return new Promise<T>((resolve, reject) => {
         if (maxAge != null && maxAge > +new Date()) {
             resolve(tempCache)
+            if (onOutdated) setTimeout(onOutdated, maxAge - +new Date(), () => TBAGet(path, onOutdated)).unref()
             console.log(path + ' from cache due to age')
             return
         }
@@ -53,6 +55,7 @@ function TBAGet<T>(path: string) {
                 modified = res.headers['last-modified'] || res.headers['Last-Modified']
                 let cacheControl = /max-age=(\d+)/.exec(res.headers['cache-control'])
                 if (cacheControl !== null && cacheControl[1]) maxAge = 1000 * parseInt(cacheControl[1], 10) + +new Date()
+                if (onOutdated) setTimeout(onOutdated, maxAge - +new Date(), () => TBAGet(path, onOutdated)).unref()
                 if (res.statusCode === 304) {
                     resolve(tempCache)
                     console.log(path + ' from cache due to 304')
@@ -74,7 +77,14 @@ function TBAGet<T>(path: string) {
         })
     })
 }
-type StrNumDic = { [key: string]: number }
+type StrNumDict = { [key: string]: number }
+type StrDict = { [key: string]: string }
+
+export interface Stats {
+    oprs: StrNumDict
+    ccwms: StrNumDict
+    dprs: StrNumDict
+}
 
 export interface TBAStatus {
     current_season: number

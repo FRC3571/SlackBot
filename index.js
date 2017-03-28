@@ -64,8 +64,7 @@ let commands = {
                                 }
                                 return;
                             }
-                            let tNum = parseInt(teamNum[0], 10);
-                            let pointsI = ranks[0].indexOf("Record (W-L-T)"), rankI = ranks[0].indexOf("Rank"), teamI = ranks[0].indexOf("Team"), teamRank = ranks.find(e => e[teamI] == tNum), dpr = stats.dprs[teamNum[0]], opr = stats.oprs[teamNum[0]], ccwm = stats.ccwms[teamNum[0]];
+                            let tNum = parseInt(teamNum[0], 10), pointsI = ranks[0].indexOf("Record (W-L-T)"), rankI = ranks[0].indexOf("Rank"), teamI = ranks[0].indexOf("Team"), teamRank = ranks.find(e => e[teamI] == tNum), dpr = stats.dprs[teamNum[0]], opr = stats.oprs[teamNum[0]], ccwm = stats.ccwms[teamNum[0]];
                             let fields = [{ title: 'Rank', value: teamRank[rankI].toString() }];
                             if (teamRank[pointsI] !== undefined) {
                                 fields.push({
