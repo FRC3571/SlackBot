@@ -73,7 +73,7 @@ let commands: { [key: string]: (mesg: slack.Message, par: string[], response: (a
                                 dpr = stats.dprs[teamNum[0]],
                                 opr = stats.oprs[teamNum[0]],
                                 ccwm = stats.ccwms[teamNum[0]]
-                            let fields: { title?: string, value?: string }[] = [{ title: 'Rank', value: teamRank[rankI].toString() }]
+                            let fields: { title?: string, value?: string }[] = [{ title: 'Rank', value: `${teamRank[rankI].toString()} /${ranks.length}` }]
                             if (teamRank[pointsI] !== undefined) {
                                 fields.push({
                                     title: 'Record (W-L-T)',
