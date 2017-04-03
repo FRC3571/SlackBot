@@ -3,7 +3,7 @@ This is a bot for slack
 
 ## Requirements
 * [NodeJS](https://nodejs.org/en/)
-* Token
+* key.txt containing the bots token
     * You can get this token it the slack integrations
 * [Typescript](https://www.typescriptlang.org/)
     * If you plan to modify the code
