@@ -3,6 +3,8 @@ This is a bot for slack
 
 ## Requirements
 * [NodeJS](https://nodejs.org/en/)
+* Token
+    * You can get this token it the slack integrations
 * [Typescript](https://www.typescriptlang.org/)
     * If you plan to modify the code
 
@@ -10,6 +12,7 @@ This is a bot for slack
 1. Open a console in the directory of your local clone
 2. Install the dependencies
     - This is done by doing `npm i` in a console
+3. Add your token to key.txt file
 3. Run `npm start`
 
 ## To modify the code
