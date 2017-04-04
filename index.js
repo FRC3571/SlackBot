@@ -134,12 +134,14 @@ let commands = {
         tbaApi_1.TBAReq.TeamEvents('frc' + team[0], curYear).then(events => {
             let s = "";
             for (let i = 0; i < events.length; i++) {
-                for (let ii = 0; ii < events[i].matches.length; ii++) {
-                    let match = events[i].matches[ii];
-                    if (match.alliances.blue.teams.indexOf(team[0]) >= 0) {
-                        s += `${match.score_breakdown.blue} match ${match.match_number}`;
-                    }
-                    else if (match.alliances.red.teams.indexOf(team[0]) >= 0) {
+                if ('matches' in events[i]) {
+                    for (let ii = 0; ii < events[i].matches.length; ii++) {
+                        let match = events[i].matches[ii];
+                        if (match.alliances.blue.teams.indexOf(team[0]) >= 0) {
+                            s += `${match.score_breakdown.blue} match ${match.match_number}`;
+                        }
+                        else if (match.alliances.red.teams.indexOf(team[0]) >= 0) {
+                        }
                     }
                 }
             }
